@@ -57,36 +57,44 @@ PKG_MANAGER=""
 UPDATE_CMD=""
 INSTALL_CMD=""
 CTAGS_PKG="ctags"
+VIM_PKG_CANDIDATES=()
 setup_package_commands() {
   if need_cmd apt-get; then
     PKG_MANAGER="apt"
     UPDATE_CMD="$SUDO apt-get update"
     INSTALL_CMD="$SUDO apt-get install -y"
     CTAGS_PKG="universal-ctags"
+    VIM_PKG_CANDIDATES=(vim-gtk3 vim)
   elif need_cmd dnf; then
     PKG_MANAGER="dnf"
     UPDATE_CMD="$SUDO dnf -y makecache"
     INSTALL_CMD="$SUDO dnf -y install"
+    VIM_PKG_CANDIDATES=(vim-X11 vim-enhanced vim)
   elif need_cmd yum; then
     PKG_MANAGER="yum"
     UPDATE_CMD="$SUDO yum -y makecache"
     INSTALL_CMD="$SUDO yum -y install"
+    VIM_PKG_CANDIDATES=(vim-X11 vim-enhanced vim)
   elif need_cmd pacman; then
     PKG_MANAGER="pacman"
     UPDATE_CMD="$SUDO pacman -Sy"
     INSTALL_CMD="$SUDO pacman -S --noconfirm --needed"
+    VIM_PKG_CANDIDATES=(gvim vim)
   elif need_cmd zypper; then
     PKG_MANAGER="zypper"
     UPDATE_CMD="$SUDO zypper refresh"
     INSTALL_CMD="$SUDO zypper install -y"
+    VIM_PKG_CANDIDATES=(gvim vim)
   elif need_cmd apk; then
     PKG_MANAGER="apk"
     UPDATE_CMD="$SUDO apk update"
     INSTALL_CMD="$SUDO apk add --no-cache"
+    VIM_PKG_CANDIDATES=(vim)
   elif need_cmd brew; then
     PKG_MANAGER="brew"
     UPDATE_CMD="brew update"
     INSTALL_CMD="brew install"
+    VIM_PKG_CANDIDATES=(vim macvim)
   else
     err "지원되지 않는 패키지 매니저입니다. apt/dnf/yum/pacman/zypper/apk/brew 중 하나가 필요합니다."
     exit 1
@@ -96,18 +104,39 @@ setup_package_commands
 info "패키지 매니저: $PKG_MANAGER"
 
 # -------------------------- 패키지 설치 -------------------------------
+install_vim_package() {
+  local candidate
+  for candidate in "${VIM_PKG_CANDIDATES[@]}"; do
+    info "Vim 패키지 설치 시도: $candidate"
+    if $INSTALL_CMD "$candidate"; then
+      ok "Vim 패키지 설치 완료: $candidate"
+      return 0
+    fi
+    warn "Vim 패키지 설치 실패: $candidate"
+  done
+  err "Vim 패키지 설치에 실패했습니다. 클립보드 지원 버전을 설치해 주세요."
+  return 1
+}
+
 install_packages() {
-  local packages=(vim git curl fzf ripgrep "$CTAGS_PKG")
+  local packages=(git curl fzf ripgrep "$CTAGS_PKG")
   info "패키지 목록 갱신 중..."
   eval "$UPDATE_CMD"
   info "필수 패키지 설치: ${packages[*]}"
   eval "$INSTALL_CMD ${packages[*]}"
+  install_vim_package || exit 1
   need_cmd vim || { err "vim 설치 확인 실패"; exit 1; }
   need_cmd git || { err "git 설치 확인 실패"; exit 1; }
   need_cmd ctags || warn "ctags 명령을 찾을 수 없습니다. 패키지 이름을 수동으로 확인하세요."
 }
 install_packages
 ok "Vim 및 필수 도구 설치 완료"
+
+if ! vim --version | grep -q '+clipboard'; then
+  err "현재 vim 빌드에 클립보드 지원(+clipboard)이 없습니다."
+  err "클립보드 지원 패키지를 설치한 뒤 다시 실행해 주세요."
+  exit 1
+fi
 
 # -------------------------- .vimrc 링크 -------------------------------
 link_vimrc() {

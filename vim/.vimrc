@@ -151,5 +151,5 @@ colorscheme solarized
 "==================================
 
 "========= yank to clipboard =================
-" 비주얼 모드에서 y를 누르면 클립보드와 일반 레지스터에 복사
-vnoremap y y:call setreg('+', getreg('"'))<CR>
+" 시스템 클립보드 연동 (vim-gtk3 등 +clipboard 빌드 필요)
+set clipboard=unnamedplus
