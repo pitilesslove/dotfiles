@@ -1,0 +1,27 @@
+# macOS specific zsh configuration
+
+# Enable color support for ls
+# LSCOLORS: 디렉토리(Ex-파란), 심볼릭링크(Gx-cyan), 소켓(Fx-마젠타), 파이프(Dx-노랑), 실행파일(Cx-초록)
+export CLICOLOR=1
+export LSCOLORS="ExGxFxDxCxegedabagacad"
+alias ls='ls -G'
+alias grep='grep --color=auto'
+alias fgrep='fgrep --color=auto'
+alias egrep='egrep --color=auto'
+
+# fzf configuration (Homebrew)
+if [[ -f /opt/homebrew/opt/fzf/shell/completion.zsh ]]; then
+    source /opt/homebrew/opt/fzf/shell/completion.zsh
+fi
+if [[ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ]]; then
+    source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+fi
+
+# Homebrew
+if [[ -f /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+
+# macOS specific aliases
+alias notepadnext="open -a NotepadNext"
+# alias code='open -a "Visual Studio Code"'

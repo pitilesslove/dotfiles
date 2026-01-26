@@ -77,16 +77,6 @@ preexec() { eval $(resize > /dev/null 2>&1) }
 # Enable "**" for recursive globbing
 setopt EXTENDED_GLOB
 
-# Make less more friendly for non-text input files
-if [ -x /usr/bin/lesspipe ]; then
-    eval "$(SHELL=/bin/sh lesspipe)"
-fi
-
-# Set the debian_chroot variable (if applicable)
-if [[ -z "${debian_chroot:-}" && -r /etc/debian_chroot ]]; then
-    debian_chroot=$(cat /etc/debian_chroot)
-fi
-
 # Check if terminal supports colors
 if [[ -x /usr/bin/tput ]] && tput setaf 1 &>/dev/null; then
     color_prompt=yes
@@ -110,32 +100,15 @@ unset color_prompt
 #promptinit
 #prompt theme robbyrussell
 
-# Enable color support of ls and handy aliases
-if [ -x /usr/bin/dircolors ]; then
-    eval "$(dircolors -b ~/.dircolors 2>/dev/null || dircolors -b)"
-    alias ls='ls --color=auto'
-    alias grep='grep --color=auto'
-    alias fgrep='fgrep --color=auto'
-    alias egrep='egrep --color=auto'
-fi
-
 # Some more ls aliases
 alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
 alias c='clear'
 
-# Add an "alert" alias for long running commands
-alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history | tail -n1 | sed -e "s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//")"'
-
 # Load additional aliases from ~/.bash_aliases if it exists
 if [ -f ~/.bash_aliases ]; then
 #    source ~/.bash_aliases
-fi
-
-# Enable fzf completion features
-if [ -f /usr/share/doc/fzf/examples/completion.zsh ]; then
-    source /usr/share/doc/fzf/examples/completion.zsh
 fi
 
 export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border"
@@ -145,12 +118,9 @@ export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_ALT_C_COMMAND='find . -type d'
 
 # Custom aliases
-alias selectJava="sudo update-alternatives --config java"
 alias bd=". bd -si"
-alias intellij="/opt/idea-IC-242.23726.103/bin/idea.sh"
-export JASYPT_ENCRYPTOR_PASSWORD="Io9f7Ua8ua5A4fa3aFa33ACf211cc9e9"
-alias datamodeler="/opt/datamodeler/datamodeler.sh"
 alias k="kubectl"
+export JASYPT_ENCRYPTOR_PASSWORD="Io9f7Ua8ua5A4fa3aFa33ACf211cc9e9"
 
 alias note="eval \$(cat ~/note.txt | fzf --height 100%)"
 
@@ -158,3 +128,13 @@ alias note="eval \$(cat ~/note.txt | fzf --height 100%)"
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 eval "$(zoxide init zsh)"
+
+# Load OS-specific configuration
+case "$OSTYPE" in
+  darwin*)  [[ -f ~/.zshrc.mac ]] && source ~/.zshrc.mac ;;
+  linux*)   [[ -f ~/.zshrc.linux ]] && source ~/.zshrc.linux ;;
+esac
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"

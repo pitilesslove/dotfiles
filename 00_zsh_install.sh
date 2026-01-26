@@ -62,7 +62,11 @@ fi
 PM=""
 UPDATE_CMD=""
 INSTALL_CMD=""
-if need_cmd apt-get; then
+if need_cmd brew; then
+  PM="brew"
+  UPDATE_CMD="brew update"
+  INSTALL_CMD="brew install"
+elif need_cmd apt-get; then
   PM="apt"
   UPDATE_CMD="$SUDO apt-get update"
   INSTALL_CMD="$SUDO apt-get install -y"
@@ -87,7 +91,11 @@ elif need_cmd apk; then
   UPDATE_CMD="$SUDO apk update"
   INSTALL_CMD="$SUDO apk add --no-cache"
 else
-  err "지원되지 않는 패키지 매니저입니다. apt/dnf/yum/pacman/zypper/apk 중 하나가 필요합니다."
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    err "macOS에서는 Homebrew가 필요합니다. https://brew.sh 를 참고해 설치 후 다시 실행하세요."
+  else
+    err "지원되지 않는 패키지 매니저입니다. apt/dnf/yum/pacman/zypper/apk 중 하나가 필요합니다."
+  fi
   exit 1
 fi
 info "패키지 매니저: $PM"
@@ -145,29 +153,25 @@ preload_plugins() {
     return
   fi
   local plugin_root="${ZINIT_HOME%/zinit.git}/plugins"
-  declare -A PLUGIN_REPOS=(
-    [zsh-users---zsh-autosuggestions]="https://github.com/zsh-users/zsh-autosuggestions.git"
-    [zsh-users---zsh-syntax-highlighting]="https://github.com/zsh-users/zsh-syntax-highlighting.git"
-    [zsh-users---zsh-completions]="https://github.com/zsh-users/zsh-completions.git"
-    [romkatv---powerlevel10k]="https://github.com/romkatv/powerlevel10k.git"
-  )
-  declare -A PLUGIN_DESCS=(
-    [zsh-users---zsh-autosuggestions]="명령 히스토리를 이용해 자동으로 추천합니다."
-    [zsh-users---zsh-syntax-highlighting]="입력 중인 명령을 색상으로 하이라이트합니다."
-    [zsh-users---zsh-completions]="추가 자동 완성 스크립트를 제공합니다."
-    [romkatv---powerlevel10k]="Powerlevel10k 테마 엔진입니다."
+  local -a PLUGINS=(
+    "zsh-users---zsh-autosuggestions|https://github.com/zsh-users/zsh-autosuggestions.git|명령 히스토리를 이용해 자동으로 추천합니다."
+    "zsh-users---zsh-syntax-highlighting|https://github.com/zsh-users/zsh-syntax-highlighting.git|입력 중인 명령을 색상으로 하이라이트합니다."
+    "zsh-users---zsh-completions|https://github.com/zsh-users/zsh-completions.git|추가 자동 완성 스크립트를 제공합니다."
+    "romkatv---powerlevel10k|https://github.com/romkatv/powerlevel10k.git|Powerlevel10k 테마 엔진입니다."
   )
   mkdir -p "$plugin_root"
-  for key in "${!PLUGIN_REPOS[@]}"; do
+  for entry in "${PLUGINS[@]}"; do
+    local key url desc
+    IFS='|' read -r key url desc <<< "$entry"
     local dest="$plugin_root/$key"
     if [[ -d "$dest/.git" ]]; then
       info "플러그인 업데이트: $key"
       git -C "$dest" pull --ff-only || warn "$key 저장소 업데이트 실패"
     else
       info "플러그인 설치: $key"
-      git clone --depth=1 "${PLUGIN_REPOS[$key]}" "$dest"
+      git clone --depth=1 "$url" "$dest"
     fi
-    PLUGIN_SUMMARY+=("${key#*---}: ${PLUGIN_DESCS[$key]}")
+    PLUGIN_SUMMARY+=("${key#*---}: $desc")
   done
   ok "주요 zinit 플러그인을 미리 내려받았습니다."
 }
@@ -306,6 +310,37 @@ link_zshrc() {
   ok "~/.zshrc → $src 심볼릭 링크 생성"
 }
 link_zshrc
+
+# ------------------------- OS별 .zshrc 심볼릭 링크 ------------------------
+link_zshrc_os() {
+  if [[ "$LINK_RC" != "1" ]]; then
+    return
+  fi
+  local os_suffix
+  case "$(uname -s)" in
+    Darwin) os_suffix="mac" ;;
+    Linux)  os_suffix="linux" ;;
+    *)      warn "알 수 없는 OS: $(uname -s), OS별 설정 파일 링크를 건너뜁니다."; return ;;
+  esac
+  local src="$REPO_ROOT/.zshrc.$os_suffix"
+  local dest="$HOME/.zshrc.$os_suffix"
+  if [[ ! -f "$src" ]]; then
+    warn "OS별 설정 파일이 존재하지 않습니다: $src"
+    return
+  fi
+  if [[ -L "$dest" ]] && [[ $(readlink -f "$dest") == $(readlink -f "$src") ]]; then
+    ok "~/.zshrc.$os_suffix 가 이미 리포지토리 파일과 연결되어 있습니다."
+    return
+  fi
+  if [[ -e "$dest" || -L "$dest" ]]; then
+    local backup="$dest.bak.$(date +%Y%m%d_%H%M%S)"
+    info "기존 ~/.zshrc.$os_suffix 백업: $backup"
+    mv -f "$dest" "$backup"
+  fi
+  ln -s "$src" "$dest"
+  ok "~/.zshrc.$os_suffix → $src 심볼릭 링크 생성"
+}
+link_zshrc_os
 
 # ------------------------- 기본 셸 변경 ------------------------------
 set_default_shell() {

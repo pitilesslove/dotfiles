@@ -1,0 +1,36 @@
+# Linux specific zsh configuration
+
+# Make less more friendly for non-text input files
+if [[ -x /usr/bin/lesspipe ]]; then
+    eval "$(SHELL=/bin/sh lesspipe)"
+fi
+
+# Set the debian_chroot variable (if applicable)
+if [[ -z "${debian_chroot:-}" && -r /etc/debian_chroot ]]; then
+    debian_chroot=$(cat /etc/debian_chroot)
+fi
+
+# Enable color support of ls and handy aliases
+if [[ -x /usr/bin/dircolors ]]; then
+    eval "$(dircolors -b ~/.dircolors 2>/dev/null || dircolors -b)"
+    alias ls='ls --color=auto'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# fzf configuration
+if [[ -f /usr/share/doc/fzf/examples/completion.zsh ]]; then
+    source /usr/share/doc/fzf/examples/completion.zsh
+fi
+if [[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]]; then
+    source /usr/share/doc/fzf/examples/key-bindings.zsh
+fi
+
+# Add an "alert" alias for long running commands
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history | tail -n1 | sed -e "s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//")"'
+
+# Linux specific aliases
+alias selectJava="sudo update-alternatives --config java"
+alias intellij="/opt/idea-IC-242.23726.103/bin/idea.sh"
+alias datamodeler="/opt/datamodeler/datamodeler.sh"
