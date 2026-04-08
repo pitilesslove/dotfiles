@@ -166,21 +166,23 @@ install_tmux_plugins() {
     return
   fi
   mkdir -p "$TMUX_PLUGIN_DIR"
-  declare -A PLUGINS=(
-    [catppuccin]="catppuccin/tmux"
-    [tmux-cpu]="tmux-plugins/tmux-cpu"
-    [tmux-nerd-font-window-name]="joshmedeski/tmux-nerd-font-window-name"
-    [tmux-online-status]="tmux-plugins/tmux-online-status"
-    [tmux-battery]="tmux-plugins/tmux-battery"
-    [tmux-primary-ip]="dreknix/tmux-primary-ip"
-    [tpm]="tmux-plugins/tpm"
-    [tmux-sensible]="tmux-plugins/tmux-sensible"
-    [vim-tmux-navigator]="christoomey/vim-tmux-navigator"
-    [tmux-yank]="tmux-plugins/tmux-yank"
-    [tmux-logging]="tmux-plugins/tmux-logging"
+  local -a PLUGINS=(
+    "catppuccin|catppuccin/tmux"
+    "tmux-cpu|tmux-plugins/tmux-cpu"
+    "tmux-nerd-font-window-name|joshmedeski/tmux-nerd-font-window-name"
+    "tmux-online-status|tmux-plugins/tmux-online-status"
+    "tmux-battery|tmux-plugins/tmux-battery"
+    "tmux-primary-ip|dreknix/tmux-primary-ip"
+    "tpm|tmux-plugins/tpm"
+    "tmux-sensible|tmux-plugins/tmux-sensible"
+    "vim-tmux-navigator|christoomey/vim-tmux-navigator"
+    "tmux-yank|tmux-plugins/tmux-yank"
+    "tmux-logging|tmux-plugins/tmux-logging"
   )
-  for name in "${!PLUGINS[@]}"; do
-    deploy_plugin "$name" "${PLUGINS[$name]}"
+  local entry name repo
+  for entry in "${PLUGINS[@]}"; do
+    IFS='|' read -r name repo <<< "$entry"
+    deploy_plugin "$name" "$repo"
   done
   ok "tmux 플러그인 설치/업데이트 완료"
 }

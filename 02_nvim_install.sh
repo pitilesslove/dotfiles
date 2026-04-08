@@ -102,22 +102,22 @@ install_packages() {
     warn "환경 변수 INSTALL_NVIM_PACKAGES=0 으로 인해 Neovim 패키지 설치를 건너뜁니다."
     return
   fi
-  local packages=(git curl ripgrep fzf unzip python3 python3-pip nodejs npm)
+  local packages=(git curl ripgrep fzf unzip)
   case "$PKG_MANAGER" in
     apt)
-      packages+=(fd-find)
+      packages+=(python3 python3-pip nodejs npm fd-find)
       ;;
     dnf|yum|zypper)
-      packages+=(fd-find)
+      packages+=(python3 python3-pip nodejs npm fd-find)
       ;;
     pacman)
-      packages+=(fd)
+      packages+=(python python-pip nodejs npm fd)
       ;;
     apk)
-      packages+=(fd)
+      packages+=(python3 py3-pip nodejs npm fd)
       ;;
     brew)
-      packages+=(fd)
+      packages+=(python3 node fd)
       ;;
   esac
   info "패키지 목록 갱신 중..."
@@ -129,23 +129,50 @@ install_packages
 ok "Neovim 의존 패키지 설치 완료"
 
 # -------------------------- Neovim 최신 버전 설치 ----------------------
+install_neovim_brew() {
+  info "Homebrew를 통해 Neovim을 설치합니다."
+  if [[ "$NEOVIM_VERSION" == "nightly" ]]; then
+    brew install --HEAD neovim || brew upgrade --fetch-HEAD neovim
+  else
+    brew install neovim || brew upgrade neovim
+  fi
+  need_cmd nvim || { err "Neovim 명령을 찾을 수 없습니다."; exit 1; }
+  local installed
+  installed="$(nvim --version | head -n 1)"
+  info "설치된 버전: $installed"
+}
+
 install_neovim_binary() {
   local version="$NEOVIM_VERSION"
   local tag
-  local asset="nvim-linux64"
+  local asset
+  local os_type
+  local arch
+
+  os_type="$(uname -s)"
+  arch="$(uname -m)"
+
+  # macOS에서는 brew를 사용하여 설치
+  if [[ "$PKG_MANAGER" == "brew" ]]; then
+    install_neovim_brew
+    return
+  fi
+
   if [[ "$version" == "nightly" ]]; then
     tag="nightly"
     asset="nvim-linux-x86_64"
   else
     tag="v${version}"
+    asset="nvim-linux64"
   fi
+
   local tarball="${asset}.tar.gz"
   local url="https://github.com/neovim/neovim/releases/download/${tag}/${tarball}"
   local tmpdir
   tmpdir="$(mktemp -d)"
-  info "Neovim v${version} 바이너리를 다운로드합니다."
+  info "Neovim ${version} 바이너리를 다운로드합니다. (${asset})"
   if ! curl -fsSL "$url" -o "$tmpdir/nvim.tar.gz"; then
-    err "Neovim v${version} 아카이브를 다운로드하지 못했습니다. URL을 확인하거나 NEOVIM_VERSION 값을 변경하세요."
+    err "Neovim ${version} 아카이브를 다운로드하지 못했습니다. URL을 확인하거나 NEOVIM_VERSION 값을 변경하세요."
     exit 1
   fi
   tar -xzf "$tmpdir/nvim.tar.gz" -C "$tmpdir"

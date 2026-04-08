@@ -23,5 +23,16 @@ if [[ -f /opt/homebrew/bin/brew ]]; then
 fi
 
 # macOS specific aliases
-alias notepadnext="open -a NotepadNext"
 # alias code='open -a "Visual Studio Code"'
+
+# NotepadNext
+notepad() {
+	open -a NotepadNext "$@"
+}
+
+# Podman (Docker compatible)
+alias docker='podman'
+alias docker-compose='podman compose'
+
+export CLAUDE_CODE_OAUTH_TOKEN=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
+launchctl setenv CLAUDE_CODE_OAUTH_TOKEN "$CLAUDE_CODE_OAUTH_TOKEN"

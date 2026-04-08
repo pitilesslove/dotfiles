@@ -101,6 +101,9 @@ case "$OSTYPE" in
   linux*)   [[ -f ~/.zshrc.linux ]] && source ~/.zshrc.linux ;;
 esac
 
+# Slidev
+export PATH="$HOME/programs/slidev/node_modules/.bin:$PATH"
+
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
@@ -114,15 +117,17 @@ export BUN_INSTALL="$HOME/.bun"
 [[ -s "$BUN_INSTALL/_bun" ]] && source "$BUN_INSTALL/_bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
-# Slidev
-export PATH="$HOME/programs/slidev/node_modules/.bin:$PATH"
-
 # pipx
 export PATH="$PATH:$HOME/.local/bin"
 
-# Kubernetes - kubeconfig 머지
+# Antigravity
+export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
+
+# npm global
+export PATH="${HOME}/.npm-global/bin:$PATH"
+
+# Kubernetes - kubeconfig 머지 (온프레미스 + Azure AKS)
 export KUBECONFIG=~/.kube/k8s-config:~/.kube/config:~/.kube/azure-config
 
 # AI tools
 [[ -f ~/.zshrc.ai ]] && source ~/.zshrc.ai
-export PATH="${HOME}/.npm-global/bin:$PATH"
