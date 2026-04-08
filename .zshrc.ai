@@ -1,0 +1,4 @@
+# ~/.zshrc.ai: AI 도구 관련 alias 및 설정
+
+# Claude Code - 권한 확인 생략 모드
+alias claude='claude --dangerously-skip-permissions'

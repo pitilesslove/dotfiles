@@ -31,7 +31,7 @@ zinit light Aloxaf/fzf-tab
 zinit snippet OMZL::git.zsh
 zinit snippet OMZP::git
 zinit snippet OMZP::sudo
-zinit snippet OMZP::archlinux
+[[ "$OSTYPE" == linux* ]] && zinit snippet OMZP::archlinux
 zinit snippet OMZP::aws
 zinit snippet OMZP::kubectl
 zinit snippet OMZP::kubectx
@@ -51,9 +51,8 @@ bindkey '^p' history-search-backward
 bindkey '^n' history-search-forward
 
 # History settings
-HISTCONTROL="ignoreboth"                   # 중복 및 공백으로 시작하는 명령어 무시 (Bash와 다르게 zsh에서는 무시됨)
-HISTSIZE=5000                              # 히스토리 크기
-SAVEHIST=$HISTSIZE                         # 히스토리 파일 크기
+HISTSIZE=5000
+SAVEHIST=$HISTSIZE
 HISTFILE=~/.zsh_history
 HISTDUP=erase
 setopt appendhistory
@@ -71,45 +70,14 @@ zstyle ':completion:*' menu no
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
 zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 
-# Check window size after each command
-preexec() { eval $(resize > /dev/null 2>&1) }
-
 # Enable "**" for recursive globbing
 setopt EXTENDED_GLOB
 
-# Check if terminal supports colors
-if [[ -x /usr/bin/tput ]] && tput setaf 1 &>/dev/null; then
-    color_prompt=yes
-else
-    color_prompt=no
-fi
-
-# Set the prompt
-if [[ "$color_prompt" == yes ]]; then
-    PROMPT='%F{green}%n@%m%f:%F{blue}%~%f$ '
-else
-    PROMPT='%n@%m:%~$ '
-fi
-
-# Unset temporary variables
-unset color_prompt
-
-
-# Set a fancy prompt with colors
-#autoload -Uz promptinit
-#promptinit
-#prompt theme robbyrussell
-
-# Some more ls aliases
+# Common aliases
 alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
 alias c='clear'
-
-# Load additional aliases from ~/.bash_aliases if it exists
-if [ -f ~/.bash_aliases ]; then
-#    source ~/.bash_aliases
-fi
 
 export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border"
 export FZF_COMPLETION_TRIGGER='**'
@@ -120,12 +88,10 @@ export FZF_ALT_C_COMMAND='find . -type d'
 # Custom aliases
 alias bd=". bd -si"
 alias k="kubectl"
-export JASYPT_ENCRYPTOR_PASSWORD="Io9f7Ua8ua5A4fa3aFa33ACf211cc9e9"
+# Secrets (JASYPT 등)
+[[ -f ~/.secrets ]] && source ~/.secrets
 
 alias note="eval \$(cat ~/note.txt | fzf --height 100%)"
-
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 eval "$(zoxide init zsh)"
 
@@ -138,3 +104,25 @@ esac
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+[[ -s "$BUN_INSTALL/_bun" ]] && source "$BUN_INSTALL/_bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+
+# Slidev
+export PATH="$HOME/programs/slidev/node_modules/.bin:$PATH"
+
+# pipx
+export PATH="$PATH:$HOME/.local/bin"
+
+# Kubernetes - kubeconfig 머지
+export KUBECONFIG=~/.kube/k8s-config:~/.kube/config:~/.kube/azure-config
+
+# AI tools
+[[ -f ~/.zshrc.ai ]] && source ~/.zshrc.ai
+export PATH="${HOME}/.npm-global/bin:$PATH"
