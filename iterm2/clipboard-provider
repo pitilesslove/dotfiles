@@ -1,0 +1,64 @@
+#!/bin/sh
+# clipboard-provider: macOS/Linux, 로컬/SSH 환경 모두에서 동작하는 클립보드 유틸리티
+# 사용법: echo "text" | clipboard-provider copy
+#         clipboard-provider paste
+
+copy_osc52() {
+    buf=$(cat "$@")
+    len=${#buf}
+    if [ "$len" -gt 74994 ]; then
+        printf 'clipboard-provider: input too large for OSC 52 (%d bytes)\n' "$len" >&2
+        return 1
+    fi
+    encoded=$(printf '%s' "$buf" | base64 | tr -d '\n')
+
+    if [ -n "$TMUX" ]; then
+        printf '\ePtmux;\e\e]52;c;%s\e\e\\\e\\' "$encoded" > /dev/tty
+    else
+        printf '\e]52;c;%s\e\\' "$encoded" > /dev/tty
+    fi
+}
+
+copy_local() {
+    # macOS
+    if command -v pbcopy >/dev/null 2>&1; then
+        pbcopy
+    # Wayland
+    elif [ -n "$WAYLAND_DISPLAY" ] && command -v wl-copy >/dev/null 2>&1; then
+        wl-copy
+    # X11
+    elif [ -n "$DISPLAY" ] && command -v xclip >/dev/null 2>&1; then
+        xclip -selection clipboard
+    else
+        return 1
+    fi
+}
+
+paste_local() {
+    if command -v pbpaste >/dev/null 2>&1; then
+        pbpaste
+    elif [ -n "$WAYLAND_DISPLAY" ] && command -v wl-paste >/dev/null 2>&1; then
+        wl-paste --no-newline
+    elif [ -n "$DISPLAY" ] && command -v xclip >/dev/null 2>&1; then
+        xclip -selection clipboard -o
+    else
+        return 1
+    fi
+}
+
+case "${1:-copy}" in
+    copy)
+        if copy_local; then
+            :
+        else
+            copy_osc52
+        fi
+        ;;
+    paste)
+        paste_local
+        ;;
+    *)
+        echo "Usage: clipboard-provider [copy|paste]" >&2
+        exit 1
+        ;;
+esac
